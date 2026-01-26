@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ápice Studio | Acceso</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --apice-bg: #F7F6F2;
+      --text-main: #1A1A1A;
+      --apice-green: #8DA399;
+      --glass: rgba(255, 255, 255, 0.7);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+    body {
+      background: var(--apice-bg);
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+    .ambient {
+      position: absolute; width: 60vw; height: 60vw;
+      background: radial-gradient(circle, rgba(141,163,153,0.15) 0%, rgba(255,255,255,0) 70%);
+      filter: blur(60px); animation: float 10s infinite ease-in-out; z-index: -1;
+    }
+    @keyframes float { 0%,100%{transform:translate(0,0);} 50%{transform:translate(-20px, 20px);} }
+    
+    .login-card {
+      background: var(--glass); backdrop-filter: blur(20px);
+      padding: 60px 50px; border-radius: 20px; width: 100%; max-width: 420px;
+      border: 1px solid rgba(255,255,255,0.8); text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+      animation: fadeUp 0.8s ease-out;
+    }
+    h1 { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--text-main); margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 13px; margin-bottom: 40px; }
+    .input-group { margin-bottom: 20px; text-align: left; }
+    label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; display: block; margin-bottom: 8px; }
+    input {
+      width: 100%; padding: 14px; background: rgba(255,255,255,0.6);
+      border: 1px solid #E0E0E0; border-radius: 8px; font-size: 14px; transition: 0.3s;
+    }
+    input:focus { border-color: var(--apice-green); background: #FFF; }
+    .btn-login {
+      width: 100%; padding: 16px; background: var(--text-main); color: white; border: none;
+      border-radius: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+      cursor: pointer; margin-top: 20px; transition: 0.3s;
+    }
+    .btn-login:hover { background: var(--apice-green); transform: translateY(-2px); }
+    #error-msg { margin-top: 20px; font-size: 12px; color: #D45D5D; min-height: 18px; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div class="ambient"></div>
+  <div class="login-card">
+    <h1>Ápice Studio</h1>
+    <p class="subtitle">Portal Privado de Clientes</p>
+    <div class="input-group">
+      <label>Email Corporativo</label>
+      <input type="email" id="email" placeholder="cliente@empresa.com">
+    </div>
+    <div class="input-group">
+      <label>Contraseña</label>
+      <input type="password" id="password" placeholder="••••••••">
+    </div>
+    <button id="loginBtn" class="btn-login">Acceder al Portal</button>
+    <div id="error-msg"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    
+    // TUS CLAVES REALES
+    const supabaseUrl = "https://jmfnwxnzxcfhvrmsmfip.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZm53eG56eGNmaHZybXNtZmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzEwMzcsImV4cCI6MjA4NDUwNzAzN30.KzyZy_S1ufhLkv63Kvmz9lm_UrDssvUE34FxGAPYxZw";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const btn = document.getElementById("loginBtn");
+    const errorDiv = document.getElementById("error-msg");
+    const emailInput = document.getElementById("email");
+    const passInput = document.getElementById("password");
+
+    btn.addEventListener("click", async () => {
+      btn.textContent = "Verificando..."; btn.disabled = true; errorDiv.textContent = "";
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailInput.value,
+        password: passInput.value,
+      });
+
+      if (error) {
+        errorDiv.textContent = "Credenciales incorrectas.";
+        btn.textContent = "Acceder al Portal"; btn.disabled = false;
+        passInput.style.borderColor = "#D45D5D";
+      } else {
+        window.location.href = "dashboard.html";
+      }
+    });
+  </script>
+</body>
+</html>
