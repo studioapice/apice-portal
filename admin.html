@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ÁPICE | Panel de Dios</title>
+  
+  <!-- FUENTES -->
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --admin-bg: #1A1A1A;
+      --admin-panel: #252525;
+      --apice-green: #8DA399;
+      --text-light: #F5F3EE;
+      --text-gray: #A0A0A0;
+      --white: #FFFFFF;
+      --danger: #D45D5D;
+      --font-serif: 'Cormorant Garamond', serif;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+    
+    body {
+      background-color: #F0F2F5; color: #333;
+      font-family: var(--font-sans); display: flex;
+      min-height: 100vh; opacity: 0; transition: opacity 0.5s;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar { width: 260px; background: var(--admin-bg); color: var(--text-light); padding: 30px; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; }
+    .brand { font-family: var(--font-serif); font-size: 24px; color: var(--apice-green); margin-bottom: 40px; letter-spacing: 1px; }
+    
+    .nav-item {
+      padding: 12px 15px; margin-bottom: 5px; border-radius: 8px;
+      color: var(--text-gray); cursor: pointer; transition: 0.3s;
+      font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 10px;
+    }
+    .nav-item:hover, .nav-item.active { background: var(--admin-panel); color: var(--apice-green); }
+    .admin-profile { margin-top: auto; border-top: 1px solid #333; padding-top: 20px; font-size: 12px; color: var(--text-gray); }
+
+    /* --- MAIN CONTENT --- */
+    .main-content { margin-left: 260px; flex: 1; padding: 40px 60px; overflow-y: auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+    .page-title { font-family: var(--font-serif); font-size: 32px; color: #111; }
+
+    /* CARDS & FORMS */
+    .admin-card { background: var(--white); border-radius: 12px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 30px; }
+    .card-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; color: #666; border-bottom: 1px solid #EEE; padding-bottom: 15px; }
+    
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .full-width { grid-column: 1 / -1; }
+    .form-group { margin-bottom: 20px; }
+    .label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px; color: #444; }
+    .input, .select, .textarea { width: 100%; padding: 12px; border: 1px solid #DDD; border-radius: 6px; font-family: var(--font-sans); font-size: 14px; transition: 0.3s; }
+    .input:focus, .select:focus, .textarea:focus { border-color: var(--apice-green); }
+    .textarea { resize: vertical; min-height: 100px; }
+
+    /* Drop Zone & Multi Inputs */
+    .drop-zone { border: 2px dashed #CCC; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: 0.3s; background: #FAFAFA; }
+    .drop-zone:hover { border-color: var(--apice-green); background: #F0F5F3; }
+    .drop-text { font-size: 13px; color: #888; }
+    
+    .multi-link-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .link-row { display: flex; gap: 10px; }
+    .btn-icon { width: 40px; background: #EEE; color: #333; display: flex; align-items: center; justify-content: center; font-size: 16px; border-radius: 6px; cursor: pointer; border: none; }
+    .btn-add-row { background: transparent; border: 1px dashed var(--apice-green); color: var(--apice-green); width: 100%; margin-top: 10px; padding: 8px; cursor: pointer; font-size: 12px; }
+
+    /* Buttons */
+    .btn { padding: 12px 24px; border-radius: 6px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 0.5px; }
+    .btn-primary { background: var(--apice-green); color: white; width: 100%; }
+    .btn-primary:hover { background: #7A9187; }
+
+    /* NOTIFICATIONS FEED */
+    .notif-filters { display: flex; gap: 15px; margin-bottom: 20px; }
+    .feed-list { display: flex; flex-direction: column; gap: 15px; }
+    .feed-item { background: #F9F9F9; padding: 20px; border-radius: 8px; border-left: 4px solid #DDD; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Colores por tipo */
+    .feed-item.type-idea { border-left-color: #D4A373; } /* Dorada: Propuestas nuevas */
+    .feed-item.type-task { border-left-color: var(--apice-green); } /* Verde: Aprobaciones/Checks */
+    .feed-item.type-material { border-left-color: #333; } /* Negro: Archivos */
+    .feed-item.type-feedback { border-left-color: #D45D5D; } /* Rojo: Comentarios */
+
+    .feed-content h4 { margin: 0 0 5px 0; font-size: 14px; color: #333; }
+    .feed-content p { margin: 0; font-size: 12px; color: #666; }
+    .feed-meta { text-align: right; font-size: 11px; color: #999; }
+    .client-badge { display: inline-block; background: #EAEAEA; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-bottom: 4px; }
+
+    .hidden { display: none !important; }
+    .loader { display: inline-block; width: 12px; height: 12px; border: 2px solid #FFF; border-radius: 50%; border-top-color: transparent; animation: spin 1s linear infinite; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">ÁPICE ADMIN</div>
+    <nav>
+      <div class="nav-item active" onclick="showSection('notificationSection'); loadNotifications();">
+        <span>🔔</span> Notificaciones
+      </div>
+      <div style="height:1px; background:#333; margin:10px 0;"></div>
+      <div class="nav-item" onclick="showSection('contentSection')">
+        <span>🎬</span> Subir Contenido
+      </div>
+      <div class="nav-item" onclick="showSection('eventSection')">
+        <span>📅</span> Agendar Evento
+      </div>
+      <div class="nav-item" onclick="showSection('ideasSection')">
+        <span>💡</span> Proponer Idea
+      </div>
+      <div class="nav-item" onclick="showSection('scriptSection')">
+        <span>📝</span> Crear Guion
+      </div>
+      <div class="nav-item" onclick="showSection('docsSection')">
+        <span>📄</span> Subir Documento
+      </div>
+      <div class="nav-item" onclick="showSection('taskSection')">
+        <span>✅</span> Asignar Tareas
+      </div>
+    </nav>
+    <div class="admin-profile">
+      <p id="adminEmail">Verificando...</p>
+      <a href="#" id="logoutBtn" style="color: #D45D5D; text-decoration: none; margin-top: 5px; display: block;">Cerrar Sesión</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="header">
+      <h1 class="page-title">Panel de Control</h1>
+      <div style="font-size: 13px; color: #666;">Estado: <span style="color: var(--apice-green); font-weight: 600;">En línea</span></div>
+    </header>
+
+    <!-- 0. NOTIFICACIONES (SUPER POTENCIADAS) -->
+    <section id="notificationSection" class="admin-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #EEE; padding-bottom:15px; margin-bottom:20px;">
+        <h2 class="card-title" style="margin:0; border:none;">Centro de Actividad</h2>
+        <button onclick="loadNotifications()" style="background:transparent; border:none; cursor:pointer; color:var(--apice-green);">↻ Actualizar</button>
+      </div>
+      <div class="notif-filters">
+        <select id="notifClientFilter" class="select" style="max-width: 250px;" onchange="loadNotifications()">
+          <option value="all">Todos los Clientes</option>
+        </select>
+      </div>
+      <div id="feedList" class="feed-list">
+        <p style="color:#999; text-align:center;">Cargando actividad...</p>
+      </div>
+    </section>
+
+    <!-- 1. CONTENIDO -->
+    <section id="contentSection" class="admin-card hidden">
+      <h2 class="card-title">Nuevo Contenido (Reel / Carrusel)</h2>
+      <div class="form-grid">
+        <div class="form-group full-width"><label class="label">Cliente</label><select id="contentClient" class="select"></select></div>
+        <div class="form-group"><label class="label">Título</label><input type="text" id="contentTitle" class="input"></div>
+        <div class="form-group"><label class="label">Fecha</label><input type="date" id="contentDate" class="input"></div>
+        
+        <div class="form-group">
+            <label class="label">Tipo</label>
+            <select id="contentType" class="select" onchange="checkCarouselMode()">
+                <option value="Reel">Reel</option>
+                <option value="Carrusel">Carrusel</option>
+            </select>
+        </div>
+        
+        <div class="form-group"><label class="label">Estado</label><select id="contentStatus" class="select"><option value="review">En Revisión</option><option value="published">Aprobado</option><option value="pending">Pendiente</option></select></div>
+        <div class="form-group full-width"><label class="label">Copy / Estrategia</label><textarea id="contentCopy" class="textarea"></textarea></div>
+
+        <!-- ZONA DE ARCHIVOS -->
+        <div class="form-group full-width">
+          <label class="label">Material Visual</label>
+          <div style="margin-bottom:10px;">
+            <button type="button" onclick="toggleUploadMethod('file')" style="font-size:11px; cursor:pointer;">Subir Archivo</button> 
+            <button type="button" onclick="toggleUploadMethod('link')" style="font-size:11px; cursor:pointer;">Pegar Link(s)</button>
+          </div>
+          
+          <div id="methodFile" class="drop-zone"><p class="drop-text" id="dropTextContent">Arrastra archivo</p><input type="file" id="contentFile" style="display:none"></div>
+          <input type="text" id="contentLinkInput" class="input hidden" placeholder="Link de Drive / Video">
+          <div id="carouselLinksArea" class="hidden">
+              <div class="multi-link-container" id="multiLinkContainer"></div>
+              <button class="btn btn-add-row" onclick="addUrlInput()">+ Añadir Slide</button>
+          </div>
+        </div>
+
+        <div class="form-group full-width"><button class="btn btn-primary" onclick="uploadContent()"><span id="contentLoader" class="loader hidden"></span>Publicar</button></div>
+      </div>
+    </section>
+
+    <!-- 1.5. AGENDAR EVENTO -->
+    <section id="eventSection" class="admin-card hidden">
+      <h2 class="card-title">Agendar Evento (Reunión / Grabación)</h2>
+      <div class="form-grid">
+        <div class="form-group full-width"><label class="label">Cliente</label><select id="eventClient" class="select"></select></div>
+        <div class="form-group full-width"><label class="label">Nombre del Evento</label><input type="text" id="eventTitle" class="input" placeholder="Ej: Rodaje Mensual"></div>
+        <div class="form-group"><label class="label">Fecha</label><input type="date" id="eventDate" class="input"></div>
+        <div class="form-group"><label class="label">Tipo</label><select id="eventType" class="select"><option value="reunion">Reunión</option><option value="grabacion">Día de Grabación</option></select></div>
+        <div class="form-group full-width"><button class="btn btn-primary" type="button" onclick="submitCalendarEvent()">Agendar en Calendario</button></div>
+      </div>
+    </section>
+
+    <!-- 2. IDEAS -->
+    <section id="ideasSection" class="admin-card hidden">
+      <h2 class="card-title">Proponer Idea</h2>
+      <div class="form-grid">
+        <div class="form-group full-width"><label class="label">Cliente</label><select id="ideaClient" class="select"></select></div>
+        <div class="form-group"><label class="label">Título</label><input type="text" id="ideaTitleAdmin" class="input"></div>
+        <div class="form-group"><label class="label">Tipo</label><select id="ideaTypeAdmin" class="select"><option value="reel">Reel</option><option value="carrusel">Carrusel</option></select></div>
+        <div class="form-group full-width"><label class="label">Descripción</label><textarea id="ideaDescAdmin" class="textarea"></textarea></div>
+        <div class="form-group"><label class="label">Fecha (Mes)</label><input type="date" id="ideaDateAdmin" class="input"></div>
+        <div class="form-group full-width"><button class="btn btn-primary" onclick="uploadIdea()">Enviar Propuesta</button></div>
+      </div>
+    </section>
+
+    <!-- 3. GUIONES -->
+    <section id="scriptSection" class="admin-card hidden">
+      <h2 class="card-title">Redactar Guion</h2>
+      <div class="form-grid">
+        <div class="full-width"><label class="label">Cliente</label><select id="scriptClient" class="select"></select></div>
+        <div class="full-width"><label class="label">Título del Guion</label><input type="text" id="scriptTitle" class="input"></div>
+        <div class="full-width"><label class="label">Hook</label><textarea id="scriptHook" class="textarea" style="min-height:60px;"></textarea></div>
+        <div class="full-width"><label class="label">Desarrollo</label><textarea id="scriptBody" class="textarea"></textarea></div>
+        <div><label class="label">Moraleja</label><input type="text" id="scriptMoral" class="input"></div>
+        <div><label class="label">CTA</label><input type="text" id="scriptCTA" class="input"></div>
+        <div class="full-width"><label class="label">Fecha</label><input type="date" id="scriptDate" class="input"></div>
+        <div class="full-width"><button class="btn btn-primary" onclick="uploadScript()">Guardar Guion</button></div>
+      </div>
+    </section>
+
+    <!-- 4. DOCUMENTOS -->
+    <section id="docsSection" class="admin-card hidden">
+      <h2 class="card-title">Subir Documento</h2>
+      <div class="form-grid">
+        <div class="form-group full-width"><label class="label">Cliente</label><select id="docClient" class="select"></select></div>
+        <div class="form-group"><label class="label">Título</label><input type="text" id="docTitle" class="input"></div>
+        <div class="form-group"><label class="label">Tipo</label><select id="docType" class="select"><option value="contrato">Contrato</option><option value="extra">Extra</option></select></div>
+        <div class="form-group full-width"><label class="label">PDF</label><div class="drop-zone" id="dropZoneDoc"><p class="drop-text" id="dropTextDoc">Click para subir PDF</p><input type="file" id="docFile" style="display:none" accept="application/pdf"></div></div>
+        <div class="form-group full-width"><button class="btn btn-primary" onclick="uploadDoc()">Subir</button></div>
+      </div>
+    </section>
+
+    <!-- 5. TAREAS -->
+    <section id="taskSection" class="admin-card hidden">
+      <h2 class="card-title">Asignar Tarea</h2>
+      <div class="form-grid">
+        <div class="form-group full-width"><label class="label">Cliente</label><select id="taskClient" class="select"></select></div>
+        <div class="form-group full-width"><label class="label">Descripción</label><input type="text" id="taskText" class="input"></div>
+        <div class="form-group"><label class="label">Fecha Límite</label><input type="date" id="taskDate" class="input"></div>
+        <div class="form-group full-width"><button class="btn btn-primary" onclick="createTask()">Asignar</button></div>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabaseUrl = "https://jmfnwxnzxcfhvrmsmfip.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZm53eG56eGNmaHZybXNtZmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzEwMzcsImV4cCI6MjA4NDUwNzAzN30.KzyZy_S1ufhLkv63Kvmz9lm_UrDssvUE34FxGAPYxZw";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    let currentUploadMethod = 'file';
+    let allClientsCache = [];
+
+    async function init() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { window.location.href = "admin-login.html"; return; }
+
+        const { data: profile } = await supabase.from('perfiles').select('rol').eq('id', session.user.id).single();
+        if (!profile || profile.rol !== 'admin') {
+            await supabase.auth.signOut(); alert("No eres admin."); window.location.href = "admin-login.html"; return;
+        }
+
+        document.body.style.opacity = "1";
+        document.getElementById("adminEmail").innerText = session.user.email;
+        
+        await loadClientsIntoSelects();
+        loadNotifications();
+        addUrlInput();
+    }
+
+    async function loadClientsIntoSelects() {
+        const { data: profiles } = await supabase.from('perfiles').select('*').eq('rol', 'cliente'); 
+        if (!profiles) return;
+        allClientsCache = profiles;
+
+        const selects = ['contentClient', 'ideaClient', 'docClient', 'taskClient', 'notifClientFilter', 'scriptClient', 'eventClient'];
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if(!select) return;
+            if(selectId === 'notifClientFilter') select.innerHTML = '<option value="all">Todos los Clientes</option>';
+            else select.innerHTML = '<option value="">Seleccionar Cliente...</option>';
+            profiles.forEach(p => {
+                const option = document.createElement("option");
+                option.value = p.id;
+                option.text = p.nombre_marca || "Cliente sin nombre";
+                select.appendChild(option);
+            });
+        });
+    }
+
+    window.showSection = (sectionId) => {
+        document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    /* --- NOTIFICACIONES (AHORA SÍ, COMPLETAS) --- */
+    window.loadNotifications = async () => {
+        const feedList = document.getElementById('feedList');
+        const filterId = document.getElementById('notifClientFilter').value;
+        feedList.innerHTML = '<p style="color:#999; text-align:center;">Cargando...</p>';
+
+        let feedItems = [];
+        let limit = 20;
+
+        // 1. Tareas completadas
+        let qTasks = supabase.from('tareas').select('*').eq('completada', true).order('fecha', {ascending: false}).limit(limit);
+        if(filterId !== 'all') qTasks = qTasks.eq('user_id', filterId);
+        const { data: tasks } = await qTasks;
+        if(tasks) tasks.forEach(t => feedItems.push({ type:'task', date: t.fecha, text: `✅ Completó tarea: "${t.texto}"`, uid: t.user_id }));
+
+        // 2. Ideas Creadas por Cliente (origen: cliente)
+        let qIdeas = supabase.from('ideas').select('*').eq('origen', 'cliente').order('created_at', {ascending: false}).limit(limit);
+        if(filterId !== 'all') qIdeas = qIdeas.eq('user_id', filterId);
+        const { data: ideas } = await qIdeas;
+        if(ideas) ideas.forEach(i => feedItems.push({ type:'idea', date: i.created_at, text: `💡 Propuso idea (${i.tipo}): "${i.titulo}"`, uid: i.user_id }));
+
+        // 3. Ideas Aprobadas (Agencia)
+        let qApprov = supabase.from('ideas').select('*').eq('estado', 'aprobada').order('created_at', {ascending: false}).limit(limit);
+        if(filterId !== 'all') qApprov = qApprov.eq('user_id', filterId);
+        const { data: appIdeas } = await qApprov;
+        if(appIdeas) appIdeas.forEach(i => feedItems.push({ type:'task', date: i.created_at, text: `✨ Aprobó idea: "${i.titulo}"`, uid: i.user_id }));
+
+        // 4. GUIONES Creados/Duplicados por Cliente
+        let qScripts = supabase.from('guiones').select('*').eq('origen', 'cliente').order('created_at', {ascending: false}).limit(limit);
+        if(filterId !== 'all') qScripts = qScripts.eq('user_id', filterId);
+        const { data: scripts } = await qScripts;
+        if(scripts) scripts.forEach(s => feedItems.push({ type:'idea', date: s.created_at, text: `📝 Creó/Duplicó Guion: "${s.titulo}"`, uid: s.user_id }));
+
+        // 5. GUIONES Aprobados/Listos (Agencia o Cliente)
+        // Buscamos cualquier guion que esté aprobado o listo para grabar
+        let qScriptsReady = supabase.from('guiones').select('*').or('estado.eq.aprobado,estado.eq.listo_grabar').order('created_at', {ascending: false}).limit(limit);
+        if(filterId !== 'all') qScriptsReady = qScriptsReady.eq('user_id', filterId);
+        const { data: readyScripts } = await qScriptsReady;
+        if(readyScripts) readyScripts.forEach(s => {
+            let label = s.estado === 'listo_grabar' ? '🎥 LISTO PARA GRABAR' : '✅ Aprobó Guion';
+            feedItems.push({ type:'task', date: s.created_at, text: `${label}: "${s.titulo}"`, uid: s.user_id });
+        });
+
+        // 6. Material Subido
+        let qMat = supabase.from('materiales').select('*').order('created_at', {ascending: false}).limit(limit);
+        if(filterId !== 'all') qMat = qMat.eq('user_id', filterId);
+        const { data: materials } = await qMat;
+        if(materials) materials.forEach(m => feedItems.push({ type:'material', date: m.created_at, text: `📂 Subió material: ${m.titulo} (${m.tipo})`, uid: m.user_id }));
+
+        // 7. Feedback
+        let qFeed = supabase.from('contenidos').select('*').not('feedback', 'is', null).order('fecha', {ascending: false}).limit(limit);
+        if(filterId !== 'all') qFeed = qFeed.eq('user_id', filterId);
+        const { data: feeds } = await qFeed;
+        if(feeds) feeds.forEach(f => feedItems.push({ type:'feedback', date: f.fecha, text: `💬 Dejó feedback en "${f.titulo}"`, uid: f.user_id }));
+
+        // Ordenar y Renderizar
+        feedItems.sort((a, b) => new Date(b.date) - new Date(a.date));
+        feedList.innerHTML = "";
+        
+        if(feedItems.length === 0) { 
+            feedList.innerHTML = '<p style="color:#999; text-align:center;">No hay actividad reciente.</p>'; 
+            return; 
+        }
+
+        feedItems.forEach(item => {
+            const clientName = allClientsCache.find(c => c.id === item.uid)?.nombre_marca || "Cliente";
+            const dateStr = new Date(item.date).toLocaleDateString();
+            const div = document.createElement('div');
+            div.className = `feed-item type-${item.type}`;
+            div.innerHTML = `<div class="feed-content"><span class="client-badge">${clientName}</span><h4>${item.text}</h4></div><div class="feed-meta">${dateStr}</div>`;
+            feedList.appendChild(div);
+        });
+    }
+
+    /* --- LÓGICA DE MULTI-LINKS (CARRUSEL) --- */
+    window.toggleUploadMethod = (method) => {
+        currentUploadMethod = method;
+        checkCarouselMode();
+    }
+    window.checkCarouselMode = () => {
+        const type = document.getElementById("contentType").value;
+        const fileArea = document.getElementById('methodFile');
+        const linkInput = document.getElementById('contentLinkInput');
+        const carouselArea = document.getElementById('carouselLinksArea');
+        fileArea.classList.add('hidden'); linkInput.classList.add('hidden'); carouselArea.classList.add('hidden');
+        if (currentUploadMethod === 'file') { fileArea.classList.remove('hidden'); } 
+        else { if (type === 'Carrusel') carouselArea.classList.remove('hidden'); else linkInput.classList.remove('hidden'); }
+    }
+    window.addUrlInput = () => {
+        const container = document.getElementById('multiLinkContainer');
+        const div = document.createElement('div');
+        div.className = 'link-row';
+        div.innerHTML = `<input type="text" class="input carousel-url-input" placeholder="Pegar URL de imagen/slide"><button class="btn-icon" onclick="this.parentElement.remove()">✕</button>`;
+        container.appendChild(div);
+    }
+
+    /* --- SUBIDA DE CONTENIDO --- */
+    const dropZoneC = document.getElementById("methodFile");
+    const fileInputC = document.getElementById("contentFile");
+    dropZoneC.onclick = () => fileInputC.click();
+    fileInputC.onchange = () => document.getElementById("dropTextContent").innerText = fileInputC.files[0].name;
+
+    window.uploadContent = async () => {
+        const clientID = document.getElementById("contentClient").value;
+        const title = document.getElementById("contentTitle").value;
+        const date = document.getElementById("contentDate").value;
+        const type = document.getElementById("contentType").value;
+        const status = document.getElementById("contentStatus").value;
+        const copy = document.getElementById("contentCopy").value;
+        const loader = document.getElementById("contentLoader");
+
+        if(!clientID || !title || !date) return alert("Faltan datos obligatorios");
+        loader.classList.remove("hidden");
+        let mediaUrl = "";
+
+        try {
+            if (currentUploadMethod === 'file') {
+                const file = fileInputC.files[0];
+                if (file) {
+                    const filePath = `${clientID}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+                    await supabase.storage.from('archivos_cliente').upload(filePath, file);
+                    const { data } = supabase.storage.from('archivos_cliente').getPublicUrl(filePath);
+                    mediaUrl = data.publicUrl;
+                }
+            } else {
+                if (type === 'Carrusel') {
+                    const inputs = document.querySelectorAll('.carousel-url-input');
+                    const urls = [];
+                    inputs.forEach(inp => { if(inp.value.trim()) urls.push(inp.value.trim()); });
+                    mediaUrl = urls.join(',');
+                } else {
+                    mediaUrl = document.getElementById("contentLinkInput").value;
+                }
+            }
+
+            const { error } = await supabase.from('contenidos').insert([{ 
+                user_id: clientID, titulo: title, fecha: date, tipo: type, 
+                estado: status, copy: copy, media_url: mediaUrl 
+            }]);
+            
+            if (error) throw error;
+            alert("¡Contenido publicado exitosamente!");
+            document.getElementById("contentTitle").value = "";
+
+        } catch (err) { alert("❌ " + err.message); } finally { loader.classList.add("hidden"); }
+    };
+
+    /* --- AGENDAR EVENTO --- */
+    window.submitCalendarEvent = async () => {
+        const clientID = document.getElementById("eventClient").value;
+        const title = document.getElementById("eventTitle").value;
+        const date = document.getElementById("eventDate").value;
+        const type = document.getElementById("eventType").value;
+
+        if(!clientID || !title || !date) return alert("Faltan datos para el evento.");
+
+        const { error } = await supabase.from('contenidos').insert([{
+            user_id: clientID,
+            titulo: title,
+            fecha: date,
+            tipo: type, // 'reunion' o 'grabacion'
+            estado: 'published',
+            copy: 'Evento de Calendario',
+            media_url: '' 
+        }]);
+
+        if(error) alert("Error al agendar: " + error.message);
+        else { alert("✅ Evento agendado en el calendario."); document.getElementById("eventTitle").value = ""; }
+    };
+
+    /* --- OTROS --- */
+    window.uploadScript = async () => {
+        const data = {
+            user_id: document.getElementById('scriptClient').value,
+            titulo: document.getElementById('scriptTitle').value,
+            hook: document.getElementById('scriptHook').value,
+            desarrollo: document.getElementById('scriptBody').value,
+            moraleja: document.getElementById('scriptMoral').value,
+            cta: document.getElementById('scriptCTA').value,
+            fecha: document.getElementById('scriptDate').value,
+            origen: 'agencia', estado: 'propuesta'
+        };
+        if(!data.user_id) return alert("Falta cliente");
+        const { error } = await supabase.from('guiones').insert([data]);
+        if(error) alert(error.message); else alert("Guion enviado");
+    };
+
+    window.uploadIdea = async () => {
+        const clientID = document.getElementById("ideaClient").value;
+        const title = document.getElementById("ideaTitleAdmin").value;
+        const type = document.getElementById("ideaTypeAdmin").value;
+        const desc = document.getElementById("ideaDescAdmin").value;
+        const date = document.getElementById("ideaDateAdmin").value;
+        if(!clientID) return alert("Faltan datos");
+        const { error } = await supabase.from('ideas').insert([{ user_id: clientID, titulo: title, tipo: type, descripcion: desc, estado: 'propuesta', origen: 'agencia', fecha: date }]);
+        if(error) alert(error.message); else alert("Propuesta enviada");
+    };
+
+    const dropZoneD = document.getElementById("dropZoneDoc");
+    const fileInputD = document.getElementById("docFile");
+    dropZoneD.onclick = () => fileInputD.click();
+    fileInputD.onchange = () => document.getElementById("dropTextDoc").innerText = fileInputD.files[0].name;
+
+    window.uploadDoc = async () => {
+        const clientID = document.getElementById("docClient").value;
+        const title = document.getElementById("docTitle").value;
+        const type = document.getElementById("docType").value;
+        const file = fileInputD.files[0];
+        if(!clientID || !file) return alert("Faltan datos");
+        const filePath = `${clientID}/docs/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+        await supabase.storage.from('archivos_cliente').upload(filePath, file);
+        const { data } = supabase.storage.from('archivos_cliente').getPublicUrl(filePath);
+        const { error } = await supabase.from('documentos').insert([{ user_id: clientID, titulo: title, tipo: type, url: data.publicUrl }]);
+        if(error) alert(error.message); else alert("Documento subido");
+    };
+
+    window.createTask = async () => {
+        const clientID = document.getElementById("taskClient").value;
+        const text = document.getElementById("taskText").value;
+        const date = document.getElementById("taskDate").value;
+        if(!clientID || !text) return alert("Faltan datos");
+        const { error } = await supabase.from('tareas').insert([{ user_id: clientID, texto: text, fecha: date, completada: false }]);
+        if(error) alert(error.message); else alert("Tarea asignada");
+    };
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => { await supabase.auth.signOut(); window.location.href = "admin-login.html"; });
+    init();
+  </script>
+</body>
+</html>
