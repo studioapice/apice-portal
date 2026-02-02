@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ápice Studio | Documentación</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* VARIABLES */
+    :root { --apice-green: #8DA399; --apice-bg: #F7F6F2; --text-main: #1A1A1A; --text-soft: #666666; --white: #FFFFFF; --border: rgba(0,0,0,0.08); --glass: rgba(255, 255, 255, 0.95); --font-serif: 'Cormorant Garamond', serif; --font-sans: 'Inter', sans-serif; --font-display: 'Playfair Display', serif; --ease: cubic-bezier(0.23, 1, 0.32, 1); }
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+    body { background: var(--apice-bg); color: var(--text-main); font-family: var(--font-sans); min-height: 100vh; overflow-x: hidden; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E"); }
+    .ambient-light { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(141,163,153,0.08) 0%, rgba(255,255,255,0) 60%); filter: blur(100px); z-index: -1; pointer-events: none; }
+    
+    .app-container { display: grid; grid-template-columns: 300px 1fr; min-height: 100vh; transition: 0.3s; }
+    
+    .floating-nav-container { position: fixed; top: 40px; right: 50px; z-index: 1000; display: flex; flex-direction: column; align-items: flex-end; }
+    .menu-trigger { width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: 0.3s var(--ease); box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.6); }
+    .menu-trigger span { width: 24px; height: 1.5px; background-color: var(--text-main); transition: 0.3s; }
+    .menu-trigger.active { background: var(--white); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .nav-dropdown { position: absolute; top: 60px; right: 0; width: 220px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px); border-radius: 16px; padding: 20px 0; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.5); opacity: 0; transform: translateY(-10px) scale(0.95); pointer-events: none; transition: all 0.4s var(--ease); transform-origin: top right; }
+    .nav-dropdown.is-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+    .nav-link { display: block; padding: 12px 25px; font-size: 13px; color: var(--text-soft); text-decoration: none; transition: 0.2s; letter-spacing: 0.5px; }
+    .nav-link:hover { background: rgba(141, 163, 153, 0.08); color: var(--text-main); padding-left: 30px; }
+    .nav-divider { height: 1px; background: rgba(0,0,0,0.05); margin: 10px 0; }
+    .nav-link.danger { color: #D45D5D; }
+    
+    .sidebar { position: sticky; top: 0; height: 100vh; padding: 60px 40px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid rgba(0,0,0,0.05); background: var(--glass); backdrop-filter: blur(30px); z-index: 50; transition: transform 0.3s; }
+    .brand { font-family: var(--font-serif); font-size: 28px; letter-spacing: 0.02em; margin-bottom: 60px; display: block; color: var(--text-main); text-decoration: none; }
+    .widget { margin-bottom: 50px; }
+    .widget-title { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #999; margin-bottom: 15px; font-weight: 600; }
+    .reflection-text { font-family: var(--font-serif); font-size: 22px; line-height: 1.4; font-style: italic; color: var(--text-main); border-left: 2px solid var(--apice-green); padding-left: 15px; }
+    .user-mini { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
+    .user-name { font-size: 12px; font-weight: 600; display: block; }
+    .user-role { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .main-content { padding: 60px 80px; overflow-y: auto; padding-bottom: 100px; }
+    
+    .header-section { margin-bottom: 60px; }
+    .page-title { font-family: var(--font-serif); font-size: 48px; font-weight: 400; color: var(--text-main); margin-bottom: 10px; }
+    .subtitle { font-size: 14px; color: var(--text-soft); max-width: 500px; line-height: 1.6; }
+    
+    .contract-section { margin-bottom: 60px; animation: fadeIn 0.8s var(--ease) backwards; }
+    .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #999; margin-bottom: 20px; display: block; }
+    .contract-card { background: var(--white); border: 1px solid rgba(0,0,0,0.05); border-radius: 16px; padding: 40px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.03); transition: 0.3s; }
+    .contract-card:hover { transform: translateY(-3px); box-shadow: 0 20px 60px rgba(141, 163, 153, 0.1); }
+    .contract-card::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: var(--apice-green); }
+    .contract-info { max-width: 60%; }
+    .contract-title { font-family: var(--font-display); font-size: 32px; color: var(--text-main); margin-bottom: 10px; }
+    .contract-meta { font-size: 13px; color: var(--text-soft); display: flex; align-items: center; gap: 15px; }
+    .status-badge { background: rgba(141, 163, 153, 0.15); color: #5A7066; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 6px 12px; border-radius: 20px; display: inline-block; }
+    .contract-icon { font-size: 40px; color: var(--apice-green); opacity: 0.8; }
+    .btn-download { background: var(--text-main); color: white; text-decoration: none; padding: 14px 28px; border-radius: 30px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; display: inline-flex; align-items: center; gap: 10px; transition: 0.3s; }
+    .btn-download:hover { background: var(--apice-green); }
+    
+    .extras-section { animation: fadeIn 0.8s var(--ease) 0.2s backwards; }
+    .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+    .doc-card { background: var(--white); padding: 30px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); transition: 0.3s; display: flex; flex-direction: column; height: 100%; }
+    .doc-card:hover { border-color: var(--apice-green); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+    .doc-icon { width: 40px; height: 40px; background: #F9F9F9; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #666; margin-bottom: 20px; }
+    .doc-title { font-size: 16px; font-weight: 500; margin-bottom: 8px; color: var(--text-main); }
+    .doc-desc { font-size: 13px; color: #999; margin-bottom: 25px; flex: 1; line-height: 1.5; }
+    .doc-link { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--apice-green); text-decoration: none; font-weight: 600; border-bottom: 1px solid transparent; align-self: flex-start; transition: 0.2s; }
+    .doc-link:hover { border-color: var(--apice-green); }
+    .empty-state { text-align: center; color: #AAA; padding: 40px; border: 1px dashed #DDD; border-radius: 12px; font-size: 13px; font-style: italic; }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* =========================================
+       RESPONSIVE (MÓVIL)
+       ========================================= */
+    .mobile-menu-btn {
+        display: none; position: fixed; bottom: 20px; left: 20px; z-index: 2000;
+        width: 50px; height: 50px; background: var(--text-main); color: white;
+        border-radius: 50%; align-items: center; justify-content: center;
+        font-size: 24px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    }
+
+    @media (max-width: 768px) {
+        .app-container { grid-template-columns: 1fr; }
+        
+        /* Sidebar Oculto */
+        .sidebar { 
+            transform: translateX(-100%); position: fixed; top: 0; left: 0; width: 85%; 
+            height: 100vh; z-index: 3000; box-shadow: 10px 0 50px rgba(0,0,0,0.2);
+        }
+        .sidebar.active { transform: translateX(0); }
+        
+        .main-content { padding: 30px 20px 100px 20px; }
+        
+        .header-section { margin-bottom: 30px; }
+        .page-title { font-size: 32px; }
+        
+        .floating-nav-container { top: 20px; right: 20px; }
+        .mobile-menu-btn { display: flex; }
+        
+        /* Contrato Card */
+        .contract-card { flex-direction: column; align-items: flex-start; gap: 20px; padding: 25px; }
+        .contract-info { max-width: 100%; }
+        .contract-meta { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .btn-download { width: 100%; justify-content: center; margin-top: 10px; }
+        
+        /* Docs Grid */
+        .docs-grid { grid-template-columns: 1fr; gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Botón Móvil -->
+  <div class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('active')">☰</div>
+
+  <div class="ambient-light"></div>
+  <div class="floating-nav-container" id="navContainer">
+    <div class="menu-trigger" id="menuTrigger"><span></span><span></span><span></span></div>
+    <div class="nav-dropdown" id="navDropdown">
+      <a href="material.html" class="nav-link">Material</a>
+      <a href="ideas.html" class="nav-link">Ideas</a>
+      <a href="documentos.html" class="nav-link" style="color:var(--apice-green);">Documentos</a>
+      <div class="nav-divider"></div>
+      <a href="dashboard.html" class="nav-link">Volver al Dashboard</a>
+      <a href="#" id="logoutBtn" class="nav-link danger">Cerrar Sesión</a>
+    </div>
+  </div>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div>
+        <a href="dashboard.html" class="brand" onclick="document.querySelector('.sidebar').classList.remove('active')">Ápice Studio.</a>
+        <div class="widget">
+          <div class="widget-title">Área Legal</div>
+          <p class="reflection-text">Espacio seguro para tu documentación oficial y recursos de marca.</p>
+        </div>
+      </div>
+      <div class="user-mini"><span class="user-name" id="userName">Cargando...</span><span class="user-role" id="userPlan">Cuenta Cliente</span></div>
+    </aside>
+    <main class="main-content">
+      <header class="header-section">
+        <h1 class="page-title">Documentación</h1>
+        <p class="subtitle">Accede a tus contratos legales y recursos adicionales proporcionados por la agencia.</p>
+      </header>
+      <section class="contract-section">
+        <span class="section-label">Documento Principal</span>
+        <div id="contractContainer"><div class="empty-state">Buscando contrato...</div></div>
+      </section>
+      <section class="extras-section">
+        <span class="section-label">Recursos Adicionales</span>
+        <div class="docs-grid" id="extrasGrid"><p style="color:#999; font-size:13px;">Cargando recursos...</p></div>
+      </section>
+    </main>
+  </div>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabaseUrl = "https://jmfnwxnzxcfhvrmsmfip.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZm53eG56eGNmaHZybXNtZmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzEwMzcsImV4cCI6MjA4NDUwNzAzN30.KzyZy_S1ufhLkv63Kvmz9lm_UrDssvUE34FxGAPYxZw";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    let currentUser = null;
+    const navContainer = document.getElementById('navContainer'); const navDropdown = document.getElementById('navDropdown'); const menuTrigger = document.getElementById('menuTrigger'); let menuTimer;
+    navContainer.addEventListener('mouseenter', () => { clearTimeout(menuTimer); navDropdown.classList.add('is-open'); menuTrigger.classList.add('active'); });
+    navContainer.addEventListener('mouseleave', () => { menuTimer = setTimeout(() => { navDropdown.classList.remove('is-open'); menuTrigger.classList.remove('active'); }, 4000); });
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { window.location.href = "index.html"; return; }
+      currentUser = session.user;
+      
+      let rawName = currentUser.email.split('@')[0];
+      if (rawName.includes('.')) rawName = rawName.split('.')[0];
+      const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+      document.getElementById("userName").innerText = displayName;
+      const { data: profile } = await supabase.from('perfiles').select('plan').eq('id', currentUser.id).single();
+      if (profile && profile.plan) document.getElementById("userPlan").innerText = profile.plan;
+
+      loadDocuments();
+    }
+    async function loadDocuments() {
+        const { data: docs, error } = await supabase.from('documentos').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+        if (error) { console.error("ERROR DE SUPABASE:", error); document.getElementById("contractContainer").innerHTML = `<div class="empty-state" style="color:red;">Error de conexión: ${error.message}</div>`; return; }
+        renderContract(docs.filter(d => d.tipo === 'contrato'));
+        renderExtras(docs.filter(d => d.tipo !== 'contrato'));
+    }
+    function renderContract(contracts) {
+        const container = document.getElementById("contractContainer");
+        if (contracts.length === 0) { container.innerHTML = '<div class="empty-state">No hay contrato activo asignado actualmente.</div>'; return; }
+        const contract = contracts[0];
+        container.innerHTML = `<div class="contract-card"><div class="contract-info"><h2 class="contract-title">${contract.titulo}</h2><div class="contract-meta"><span class="status-badge">● Vigente</span><span>${contract.descripcion || 'Documento oficial'}</span></div></div><div style="display:flex; align-items:center; gap:20px;"><div class="contract-icon">⚖️</div><a href="${contract.url}" target="_blank" class="btn-download">Descargar PDF<span style="font-size:16px;">↓</span></a></div></div>`;
+    }
+    function renderExtras(extras) {
+        const grid = document.getElementById("extrasGrid"); grid.innerHTML = "";
+        if (extras.length === 0) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No hay documentos adicionales.</div>'; return; }
+        extras.forEach(doc => {
+            const card = document.createElement("div"); card.className = "doc-card";
+            let icon = "📄"; if (doc.titulo && doc.titulo.toLowerCase().includes("guia")) icon = "📘"; if (doc.titulo && doc.titulo.toLowerCase().includes("manual")) icon = "📕";
+            card.innerHTML = `<div class="doc-icon">${icon}</div><h3 class="doc-title">${doc.titulo}</h3><p class="doc-desc">${doc.descripcion || 'Recurso descargable.'}</p><a href="${doc.url}" target="_blank" class="doc-link">Ver Documento →</a>`;
+            grid.appendChild(card);
+        });
+    }
+    document.getElementById("logoutBtn").addEventListener("click", async () => { await supabase.auth.signOut(); window.location.href = "index.html"; });
+    init();
+  </script>
+</body>
+</html>
