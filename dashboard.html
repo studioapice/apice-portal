@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ápice Studio | Ecosistema</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       1. VARIABLES & AMBIENTE
+       ========================================= */
+    :root {
+      --apice-green: #8DA399;
+      --apice-bg: #F7F6F2;
+      --text-main: #1A1A1A;
+      --text-soft: #666666;
+      --white: #FFFFFF;
+      --border: rgba(0,0,0,0.08);
+      --glass: rgba(255, 255, 255, 0.95);
+      --font-serif: 'Cormorant Garamond', serif; 
+      --font-display: 'Playfair Display', serif;
+      --font-sans: 'Inter', sans-serif;
+      --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      background: var(--apice-bg); color: var(--text-main); font-family: var(--font-sans);
+      min-height: 100vh; overflow-x: hidden;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+
+    /* Luz Ambiental */
+    .ambient-light { position: fixed; top: -10%; left: -10%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(141,163,153,0.12) 0%, rgba(255,255,255,0) 60%); filter: blur(90px); z-index: -1; animation: float 15s infinite ease-in-out; pointer-events: none; }
+    @keyframes float { 0%,100%{transform:translate(0,0);} 50%{transform:translate(30px, 40px);} }
+
+    .app-container { display: grid; grid-template-columns: 320px 1fr; min-height: 100vh; }
+
+    /* =========================================
+       2. MENÚ FLOTANTE (DERECHA)
+       ========================================= */
+    .floating-nav-container { position: fixed; top: 40px; right: 50px; z-index: 1000; display: flex; flex-direction: column; align-items: flex-end; }
+    .menu-trigger {
+      width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: 0.3s var(--ease);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.6);
+    }
+    .menu-trigger span { width: 24px; height: 1.5px; background-color: var(--text-main); transition: 0.3s; }
+    .menu-trigger.active { background: var(--white); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    
+    .nav-dropdown {
+      position: absolute; top: 60px; right: 0; width: 220px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px);
+      border-radius: 16px; padding: 20px 0; box-shadow: 0 20px 60px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.5);
+      opacity: 0; transform: translateY(-10px) scale(0.95); pointer-events: none; transition: all 0.4s var(--ease); transform-origin: top right;
+    }
+    .nav-dropdown.is-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+    .nav-link { display: block; padding: 12px 25px; font-size: 13px; color: var(--text-soft); text-decoration: none; transition: 0.2s; letter-spacing: 0.5px; }
+    .nav-link:hover { background: rgba(141, 163, 153, 0.08); color: var(--text-main); padding-left: 30px; }
+    .nav-divider { height: 1px; background: rgba(0,0,0,0.05); margin: 10px 0; }
+    .nav-link.danger { color: #D45D5D; }
+    .nav-link.danger:hover { background: rgba(212, 93, 93, 0.05); }
+
+    /* =========================================
+       3. SIDEBAR (IZQUIERDA)
+       ========================================= */
+    .sidebar { position: sticky; top: 0; height: 100vh; padding: 60px 40px; display: flex; flex-direction: column; justify-content: space-between; border-right: 1px solid rgba(0,0,0,0.05); background: var(--glass); backdrop-filter: blur(30px); z-index: 50; transition: transform 0.4s var(--ease); }
+    .brand { font-family: var(--font-serif); font-size: 28px; letter-spacing: 0.02em; margin-bottom: 60px; display: block; color: var(--text-main); text-decoration: none; }
+    .widget { margin-bottom: 50px; opacity: 0; animation: fadeUp 0.8s var(--ease) forwards; }
+    .widget-title { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #999; margin-bottom: 15px; font-weight: 600; }
+    .reflection-text { font-family: var(--font-serif); font-size: 22px; line-height: 1.4; font-style: italic; color: var(--text-main); border-left: 2px solid var(--apice-green); padding-left: 15px; }
+    
+    .checklist-container { min-height: 100px; }
+    .checklist-item { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; font-size: 13px; color: var(--text-soft); cursor: pointer; transition: 0.2s; }
+    .checklist-item:hover { color: var(--text-main); }
+    .check-circle { width: 18px; height: 18px; border: 1px solid #CCC; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s; background: transparent; }
+    .checklist-item.is-completed .check-circle { background: var(--apice-green); border-color: var(--apice-green); }
+    .checklist-item.is-completed .check-circle::after { content: '✓'; color: white; font-size: 10px; font-weight: bold; }
+    .checklist-item.is-completed span { text-decoration: line-through; color: #AAA; }
+    
+    .task-progress-container { margin-top: 20px; }
+    .task-progress-bar { width: 100%; height: 4px; background: #E0E0E0; border-radius: 4px; overflow: hidden; margin-bottom: 5px; }
+    .task-progress-fill { height: 100%; background: var(--apice-green); width: 0%; transition: width 0.5s ease; border-radius: 4px; }
+    .task-progress-text { font-size: 10px; color: #999; text-align: right; display: block; font-family: var(--font-display); letter-spacing: 1px;}
+
+    .user-mini { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); }
+    .user-name { font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; }
+    .user-role { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* BOTÓN CERRAR SIDEBAR (Inicialmente oculto en PC) */
+    .sidebar-close-btn { 
+        display: none; /* Solo visible en móvil */
+        position: absolute; top: 20px; right: 20px; 
+        font-size: 24px; color: #333; cursor: pointer; 
+        width: 40px; height: 40px; align-items: center; justify-content: center;
+        background: #F0F0F0; border-radius: 50%; z-index: 3002;
+    }
+
+    /* =========================================
+       4. MAIN CONTENT
+       ========================================= */
+    .main-content { padding: 60px 80px; overflow-y: auto; }
+    .header-section { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .page-title { font-family: var(--font-serif); font-size: 48px; font-weight: 400; color: var(--text-main); }
+    .greeting { font-size: 14px; color: var(--text-soft); margin-bottom: 5px; }
+
+    .progress-section {
+      background: var(--white); padding: 25px 30px; border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-bottom: 40px;
+      display: flex; align-items: center; justify-content: space-between; gap: 40px;
+      animation: fadeUp 0.8s var(--ease) 0.2s backwards;
+    }
+    .prog-info h3 { font-size: 14px; margin-bottom: 5px; font-weight: 500; }
+    .prog-info p { font-size: 12px; color: var(--text-soft); }
+    .prog-bar-wrapper { flex: 1; height: 6px; background: #EEE; border-radius: 10px; overflow: hidden; }
+    .prog-fill { height: 100%; background: var(--apice-green); width: 0%; transition: width 1.5s var(--ease); }
+    .prog-number { font-family: var(--font-serif); font-size: 36px; color: var(--apice-green); min-width: 80px; text-align: right; font-style: italic; }
+    .prog-label { font-size: 10px; text-transform: uppercase; color: #999; display: block; text-align: right; margin-top: 4px; }
+
+    /* Calendario */
+    .calendar-container { background: var(--white); border-radius: 20px; padding: 40px; box-shadow: 0 15px 50px -10px rgba(0,0,0,0.05); animation: fadeUp 0.8s var(--ease) 0.3s backwards; }
+    .cal-header { margin-bottom: 25px; border-bottom: 1px solid var(--border); padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .month-display { font-family: var(--font-serif); font-size: 28px; color: var(--text-main); font-style: italic; }
+    .cal-nav-btn { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 50%; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; color: var(--text-soft); }
+    .cal-nav-btn:hover { border-color: var(--apice-green); color: var(--apice-green); }
+
+    .cal-grid-head { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 15px; }
+    .cal-day-name { text-align: right; font-size: 11px; text-transform: uppercase; color: #AAA; letter-spacing: 1px; padding-right: 10px; }
+    .cal-grid-body { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+    
+    .cal-cell { 
+        aspect-ratio: 1/1.1; border: 1px solid var(--border); border-radius: 8px; 
+        background: #FAFAFA; position: relative; padding: 10px; 
+        transition: all 0.3s var(--ease); overflow: hidden;
+        display: flex; flex-direction: column; gap: 5px;
+    }
+    .cal-cell:hover { background: #F0F0F0; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.04); }
+    .cal-date-container { position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 12px; backdrop-filter: blur(4px); }
+    .cal-date-num { font-size: 12px; color: #999; font-weight: 500; }
+    .cal-cell.today .cal-date-num { color: var(--apice-green); font-weight: 700; }
+    .cal-cell.today { border-color: var(--apice-green); background: rgba(141, 163, 153, 0.05); }
+    .event-icon-mini { font-size: 10px; }
+    .efem-label { margin-top: auto; font-size: 10px; color: #888; font-style: italic; background: rgba(240,240,240,0.6); padding: 3px 6px; border-radius: 4px; align-self: flex-start; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+
+    /* TARJETAS VISUALES */
+    .visual-card {
+      flex: 1; width: 100%; border-radius: 6px; cursor: pointer;
+      display: flex; flex-direction: column; justify-content: flex-end; padding: 10px;
+      transition: all 0.4s var(--ease);
+      background-size: cover; background-position: center;
+      background-color: #FFFFFF;
+      position: relative; margin-bottom: 2px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+    }
+    .visual-card:hover { z-index: 10; }
+    .visual-card.has-img { background-image: linear-gradient(to top, rgba(0,0,0,0.7), transparent); }
+    .visual-card.has-img:hover { background-image: linear-gradient(to top, rgba(141, 163, 153, 0.9), rgba(141, 163, 153, 0.4)); }
+    .visual-card.no-img { background: #FFF; }
+    .visual-card.no-img:hover { background: var(--apice-green); }
+    .visual-card.no-img:hover .vc-title, .visual-card.no-img:hover .vc-type { color: white; }
+    
+    .vc-title { font-size: 11px; color: var(--text-main); font-weight: 600; z-index: 2; line-height: 1.3; transition: 0.3s; text-shadow: none; }
+    .vc-type { font-size: 9px; color: #999; text-transform: uppercase; margin-bottom: 4px; z-index: 2; letter-spacing: 0.5px; transition: 0.3s; }
+    .visual-card.has-img .vc-title { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+    .visual-card.has-img .vc-type { color: rgba(255,255,255,0.9); }
+    
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; margin-bottom: 4px; }
+    .dot-pub { background: var(--apice-green); box-shadow: 0 0 0 2px rgba(141, 163, 153, 0.2); }
+    .dot-rev { background: #D4A373; box-shadow: 0 0 0 2px rgba(212, 163, 115, 0.2); }
+    .dot-pen { background: #CCC; }
+
+    /* =========================================
+       5. DRAWER (FUNCIONALIDAD COMPLETA)
+       ========================================= */
+    .drawer { position: fixed; top: 0; right: 0; width: 550px; height: 100vh; background: var(--white); z-index: 2000; padding: 0; box-shadow: -20px 0 60px rgba(0,0,0,0.15); transform: translateX(100%); transition: transform 0.6s var(--ease); display: flex; flex-direction: column; }
+    .drawer.active { transform: translateX(0); }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(30,30,30,0.4); backdrop-filter: blur(5px); opacity: 0; pointer-events: none; transition: 0.4s; z-index: 1500; }
+    .overlay.active { opacity: 1; pointer-events: all; }
+
+    /* BARRA SUPERIOR DE DRAWER (NUEVO BOTÓN VOLVER) */
+    .drawer-nav-bar {
+        padding: 15px 25px; border-bottom: 1px solid #EEE; display: flex; align-items: center; justify-content: flex-start;
+        background: var(--white); z-index: 2001;
+    }
+    .back-btn-drawer {
+        background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-main); 
+        cursor: pointer; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .back-btn-drawer:hover { color: var(--apice-green); }
+
+    .media-container { width: 100%; background: #000; position: relative; height: 50vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .media-iframe { width: 100%; height: 100%; border: none; }
+    .no-media-placeholder { width: 100%; height: 100%; background: #F8F8F8; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Carrusel */
+    .carousel-wrapper { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #111; }
+    .carousel-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .carousel-button {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.3); color: white;
+        font-size: 20px; cursor: pointer; z-index: 10;
+        border-radius: 50%; width: 48px; height: 48px;
+        display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+        backdrop-filter: blur(5px);
+    }
+    .carousel-button:hover { background: rgba(255, 255, 255, 0.9); color: var(--text-main); }
+    .carousel-button.left { left: 20px; }
+    .carousel-button.right { right: 20px; }
+
+    .drawer-body { padding: 40px; flex: 1; overflow-y: auto; }
+    .drawer-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    
+    .tag { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 6px 14px; border-radius: 20px; font-weight: 600; display: inline-block; }
+    .tag-green { background: var(--apice-green); color: white; } 
+    .tag-gold { background: rgba(212,163,115,0.15); color: #8A6A4B; }
+    .tag-gray { background: #F0F0F0; color: #999; }
+    
+    .drawer-title { font-family: var(--font-display); font-size: 32px; line-height: 1.1; color: var(--text-main); margin-bottom: 8px; }
+    .drawer-meta-date { font-size: 13px; color: #999; margin-bottom: 30px; display: block; }
+    
+    .info-group { margin-bottom: 30px; }
+    .info-label { font-size: 10px; text-transform: uppercase; color: #AAA; margin-bottom: 12px; letter-spacing: 1.5px; font-weight: 600; border-bottom: 1px solid #F0F0F0; padding-bottom: 5px; display: block; }
+    .copy-content { font-size: 15px; line-height: 1.8; color: #333; white-space: pre-line; font-weight: 300; font-family: var(--font-serif); font-size: 17px; }
+
+    .comments-section { background: #F9F9F9; border-radius: 12px; padding: 20px; margin-top: 20px; }
+    .comments-title { font-size: 12px; font-weight: 600; margin-bottom: 12px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+    .comments-title::before { content: ''; display: block; width: 6px; height: 6px; background: var(--apice-green); border-radius: 50%; }
+    .comment-input { width: 100%; min-height: 80px; border: 1px solid #E0E0E0; border-radius: 8px; padding: 12px; font-family: var(--font-sans); font-size: 13px; resize: vertical; margin-bottom: 12px; transition: 0.3s; }
+    .comment-input:focus { border-color: var(--apice-green); background: #FFF; }
+    .btn-submit { background: var(--text-main); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.3s; width: 100%; }
+    .btn-submit:hover { background: var(--apice-green); }
+    
+    .close-btn { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: 0.2s; color: white; font-size: 18px; border: 1px solid rgba(255,255,255,0.2); }
+    .close-btn:hover { background: var(--apice-green); transform: scale(1.1); }
+    
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* =========================================
+       RESPONSIVE (MÓVIL)
+       ========================================= */
+    /* Botón flotante para abrir Sidebar en móvil */
+    .mobile-menu-btn {
+        display: none; position: fixed; bottom: 20px; left: 20px; z-index: 3001;
+        width: 50px; height: 50px; background: var(--text-main); color: white;
+        border-radius: 50%; align-items: center; justify-content: center;
+        font-size: 24px; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        cursor: pointer;
+    }
+
+    /* Fondo oscuro para cerrar sidebar al tocar fuera */
+    .sidebar-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 2900; backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.active { display: block; }
+
+    @media (max-width: 768px) {
+        .app-container { grid-template-columns: 1fr; }
+        
+        /* Sidebar Oculto por defecto */
+        .sidebar { 
+            transform: translateX(-100%); position: fixed; top: 0; left: 0; width: 85%; 
+            height: 100vh; z-index: 3000; box-shadow: 10px 0 50px rgba(0,0,0,0.2);
+            background: #F7F6F2;
+        }
+        .sidebar.active { transform: translateX(0); }
+        .sidebar-close-btn { display: flex; } /* Mostrar botón cerrar X */
+
+        .main-content { padding: 30px 20px 100px 20px; }
+        
+        .header-section { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .page-title { font-size: 32px; }
+        
+        /* Calendario en Móvil: Scroll Horizontal */
+        .calendar-container { padding: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .cal-grid-head, .cal-grid-body { min-width: 700px; /* Forzar scroll */ } 
+        
+        /* Progress Bar Stack */
+        .progress-section { flex-direction: column; align-items: flex-start; gap: 20px; }
+        .prog-bar-wrapper { width: 100%; }
+        
+        /* Botones flotantes */
+        .floating-nav-container { top: 20px; right: 20px; z-index: 2500; }
+        .mobile-menu-btn { display: flex; }
+        
+        /* Drawer full width */
+        .drawer { width: 100%; }
+        
+        /* ARREGLO IMÁGENES CARRUSEL MÓVIL */
+        /* Forzar altura mínima para que la imagen se vea en móvil */
+        .visual-card { min-height: 140px; } 
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Elementos Móviles -->
+  <div class="mobile-menu-btn" onclick="toggleSidebar()">☰</div>
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <div class="ambient-light"></div>
+  <div class="floating-nav-container" id="navContainer">
+    <!-- Click para móvil, Hover para desktop -->
+    <div class="menu-trigger" id="menuTrigger" onclick="toggleMenuMobile()"><span></span><span></span><span></span></div>
+    <div class="nav-dropdown" id="navDropdown">
+      <a href="material.html" class="nav-link">Material</a>
+      <a href="ideas.html" class="nav-link">Ideas</a>
+      <a href="documentos.html" class="nav-link">Documentos</a>
+      <div class="nav-divider"></div>
+      <a href="#" id="logoutBtn" class="nav-link danger">Cerrar Sesión</a>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-close-btn" onclick="toggleSidebar()">✕</div>
+      <div>
+        <a href="dashboard.html" class="brand" onclick="toggleSidebar()">Ápice Studio.</a>
+        <div class="widget">
+          <div class="widget-title">Reflexión del mes</div>
+          <p class="reflection-text">“La consistencia vence a la intensidad.”</p>
+        </div>
+        <div class="widget">
+          <div class="widget-title">Tareas del Mes</div>
+          <div id="taskList" class="checklist-container"><p style="font-size:12px; color:#999;">Cargando tareas...</p></div>
+          <div class="task-progress-container">
+            <div class="task-progress-bar"><div class="task-progress-fill" id="taskProgressBar"></div></div>
+            <span class="task-progress-text" id="taskProgressText">0% COMPLETADO</span>
+          </div>
+        </div>
+      </div>
+      <div class="user-mini"><span class="user-name" id="userName">Cargando...</span><span class="user-role" id="userPlan">Cuenta Cliente</span></div>
+    </aside>
+    <main class="main-content">
+      <header class="header-section">
+        <div><p class="greeting" id="greeting">Bienvenido,</p><h1 class="page-title">Tu Ecosistema de Contenido</h1></div>
+        <div class="month-display" style="font-size: 18px;" id="currentDateDisplay">...</div>
+      </header>
+      <section class="progress-section">
+        <div class="prog-info"><h3>Progreso de Publicación</h3><p>Contenido subido este mes (Meta: 12)</p></div>
+        <div class="prog-bar-wrapper"><div class="prog-fill" id="progressBar"></div></div>
+        <div><div class="prog-number" id="progressText">0/12</div><span class="prog-label">Contenido</span></div>
+      </section>
+      <section class="calendar-container">
+        <div class="cal-header">
+            <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8592;</button>
+            <div class="month-display" id="calMonthDisplay">Cargando...</div>
+            <button class="cal-nav-btn" onclick="changeMonth(1)">&#8594;</button>
+        </div>
+        <!-- Wrapper para Scroll Horizontal en Móvil -->
+        <div style="overflow-x:auto;">
+            <div class="cal-grid-head">
+              <div class="cal-day-name">Lun</div><div class="cal-day-name">Mar</div><div class="cal-day-name">Mié</div>
+              <div class="cal-day-name">Jue</div><div class="cal-day-name">Vie</div><div class="cal-day-name">Sáb</div><div class="cal-day-name">Dom</div>
+            </div>
+            <div class="cal-grid-body" id="calendarGrid"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <!-- NUEVO: BOTÓN VOLVER ARRIBA DEL DRAWER -->
+    <div class="drawer-nav-bar">
+        <button class="back-btn-drawer" onclick="closeDrawer()">
+            <span>←</span> Volver al Calendario
+        </button>
+    </div>
+    
+    <div class="media-container" id="mediaContainer"><div class="no-media-placeholder">Cargando...</div></div>
+    <div class="drawer-body">
+      <div class="drawer-header-row">
+        <div><h2 class="drawer-title" id="d-title">Título</h2><span class="drawer-meta-date" id="d-date">Fecha</span></div>
+        <span class="tag" id="d-status">ESTADO</span>
+      </div>
+      <div class="info-group"><span class="info-label">Estrategia & Copy</span><p class="copy-content" id="d-copy">...</p></div>
+      <div class="comments-section">
+        <div class="comments-title">Feedback & Notas</div>
+        <textarea class="comment-input" id="commentInput" placeholder="Escribe aquí tus correcciones o aprobación..."></textarea>
+        <button class="btn-submit" onclick="sendComment()">Enviar Comentario</button>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const supabaseUrl = "https://jmfnwxnzxcfhvrmsmfip.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZm53eG56eGNmaHZybXNtZmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzEwMzcsImV4cCI6MjA4NDUwNzAzN30.KzyZy_S1ufhLkv63Kvmz9lm_UrDssvUE34FxGAPYxZw";
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    let currentUser = null; let currentContentId = null; let viewDate = new Date(); const today = new Date();
+    
+    // MENÚ FLOTANTE (Móvil + Desktop)
+    const navContainer = document.getElementById('navContainer'); 
+    const navDropdown = document.getElementById('navDropdown'); 
+    const menuTrigger = document.getElementById('menuTrigger'); 
+    let menuTimer;
+    
+    // Desktop Hover
+    navContainer.addEventListener('mouseenter', () => { if(window.innerWidth > 768) { clearTimeout(menuTimer); navDropdown.classList.add('is-open'); menuTrigger.classList.add('active'); } });
+    navContainer.addEventListener('mouseleave', () => { if(window.innerWidth > 768) { menuTimer = setTimeout(() => { navDropdown.classList.remove('is-open'); menuTrigger.classList.remove('active'); }, 500); } });
+    
+    // Mobile Click Toggle (Global function)
+    window.toggleMenuMobile = () => {
+        navDropdown.classList.toggle('is-open');
+        menuTrigger.classList.toggle('active');
+    };
+    
+    // SIDEBAR TOGGLE (Global)
+    window.toggleSidebar = () => {
+        document.querySelector('.sidebar').classList.toggle('active');
+        document.querySelector('.sidebar-overlay').classList.toggle('active');
+    };
+
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { window.location.href = "index.html"; return; }
+      currentUser = session.user; 
+      
+      let rawName = currentUser.email.split('@')[0];
+      if (rawName.includes('.')) rawName = rawName.split('.')[0];
+      const displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+      document.getElementById("userName").innerText = displayName;
+      const { data: profile } = await supabase.from('perfiles').select('plan').eq('id', currentUser.id).single();
+      if (profile && profile.plan) document.getElementById("userPlan").innerText = profile.plan;
+
+      const h = new Date().getHours(); const greet = h < 12 ? 'Buenos días,' : (h < 20 ? 'Buenas tardes,' : 'Buenas noches,');
+      document.getElementById("greeting").innerText = `${greet} ${displayName}`;
+      const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+      document.getElementById("currentDateDisplay").innerText = `${monthNames[today.getMonth()]} ${today.getFullYear()}`;
+      updateCalendarView();
+    }
+    
+    window.changeMonth = (delta) => { viewDate.setMonth(viewDate.getMonth() + delta); updateCalendarView(); };
+    
+    async function updateCalendarView() {
+        const m = viewDate.getMonth(); const y = viewDate.getFullYear();
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        document.getElementById("calMonthDisplay").innerText = `${monthNames[m]} ${y}`;
+        renderCalendarStructure(m, y); await loadAndInjectContent(m, y); await loadTasks(m, y);
+    }
+    
+    function renderCalendarStructure(month, year) {
+      const grid = document.getElementById("calendarGrid"); grid.innerHTML = "";
+      const firstDay = new Date(year, month, 1).getDay(); const startDay = firstDay === 0 ? 6 : firstDay - 1; 
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      for (let i = 0; i < startDay; i++) { const cell = document.createElement("div"); cell.className = "cal-cell empty"; grid.appendChild(cell); }
+      for (let i = 1; i <= daysInMonth; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cal-cell";
+        const mStr = (month + 1).toString().padStart(2, '0'); const dStr = i.toString().padStart(2, '0');
+        cell.setAttribute("data-date", `${year}-${mStr}-${dStr}`);
+        if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) cell.classList.add("today");
+        
+        cell.innerHTML = `
+            <div class="cal-date-container" id="date-${year}-${mStr}-${dStr}">
+                <span class="cal-date-num">${i}</span>
+            </div>
+        `;
+        grid.appendChild(cell);
+      }
+    }
+    
+    async function loadAndInjectContent(month, year) {
+      const { data: contenidos, error } = await supabase.from("contenidos").select("*").eq("user_id", currentUser.id);
+      const { data: efemerides } = await supabase.from("efemerides").select("*");
+
+      if (error) { console.error("ERROR DB:", error); return; }
+      
+      const currentMonthContents = contenidos.filter(item => { if (!item.fecha) return false; const [yy, mm, dd] = item.fecha.split('-'); return parseInt(yy) === year && parseInt(mm) === (month + 1); });
+      const totalItemsMonth = currentMonthContents.filter(i => i.tipo === 'Reel' || i.tipo === 'Carrusel').length; 
+      const totalGoal = 12;
+      const percentage = Math.min((totalItemsMonth / totalGoal) * 100, 100);
+      document.getElementById("progressBar").style.width = `${percentage}%`; document.getElementById("progressText").innerText = `${totalItemsMonth}/${totalGoal}`;
+      
+      if(efemerides) {
+          efemerides.forEach(ef => {
+              const [yy, mm, dd] = ef.fecha.split('-');
+              if(parseInt(yy) === year && parseInt(mm) === (month + 1)) {
+                  const cell = document.querySelector(`.cal-cell[data-date="${ef.fecha}"]`);
+                  if(cell) {
+                      const div = document.createElement('div');
+                      div.className = 'efem-label';
+                      div.innerHTML = `${ef.icono || '📅'} ${ef.titulo}`;
+                      cell.appendChild(div);
+                  }
+              }
+          });
+      }
+
+      currentMonthContents.forEach(item => {
+        const st = item.estado ? item.estado.toUpperCase().trim() : 'PENDIENTE';
+        const cell = document.querySelector(`.cal-cell[data-date="${item.fecha}"]`);
+        
+        if (cell) {
+            if (item.tipo === 'reunion' || item.tipo === 'grabacion') {
+                const header = cell.querySelector('.cal-date-container');
+                const icon = item.tipo === 'reunion' ? '⭐' : '🎥';
+                const span = document.createElement('span');
+                span.className = 'event-icon-mini';
+                span.innerText = icon;
+                header.appendChild(span);
+            } else {
+                const card = document.createElement("div");
+                let hasImg = false;
+                
+                if (item.media_url && item.media_url.length > 5) {
+                   const mediaUrls = item.media_url.split(',').map(u => u.trim());
+                   // BUSCAR ID DE DRIVE ROBUSTO (Para arreglar visualización)
+                   let driveId = null;
+                   
+                   // Intentar encontrar ID en cualquier link de la lista
+                   mediaUrls.forEach(url => {
+                       if(url.includes('drive.google.com') && url.includes('file')) {
+                           driveId = url.split('/d/')[1].split('/')[0];
+                       }
+                   });
+
+                   if (driveId) {
+                       hasImg = true;
+                       card.style.backgroundImage = `url('https://lh3.googleusercontent.com/d/${driveId}=s400')`; 
+                   } else if (mediaUrls[0].match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                       hasImg = true;
+                       card.style.backgroundImage = `url('${mediaUrls[0]}')`;
+                   } else {
+                       hasImg = true;
+                       card.style.backgroundImage = `linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%)`; 
+                   }
+                }
+                
+                card.className = `visual-card ${hasImg ? 'has-img' : 'no-img'}`;
+      
+                let dotClass = "dot-pen";
+                if (['PUBLISHED', 'PUBLICADO', 'APROBADO', 'APPROVED'].includes(st)) dotClass = "dot-pub";
+                if (['REVIEW', 'REVISION', 'EN REVISION', 'EN REVISIÓN'].includes(st)) dotClass = "dot-rev";
+      
+                card.innerHTML = `
+                  <div class="status-dot ${dotClass}"></div>
+                  <div class="vc-type">${item.tipo || 'Post'}</div>
+                  <div class="vc-title">${item.titulo}</div>
+                `;
+                
+                card.onclick = (e) => { e.stopPropagation(); openDrawer(item); };
+                cell.appendChild(card);
+            }
+        }
+      });
+    }
+    
+    async function loadTasks(month, year) {
+        const taskListEl = document.getElementById("taskList"); const progBar = document.getElementById("taskProgressBar"); const progText = document.getElementById("taskProgressText");
+        taskListEl.innerHTML = '<p style="font-size:11px; color:#999;">Cargando...</p>';
+        const { data: tareas, error } = await supabase.from("tareas").select("*").eq("user_id", currentUser.id).order('id', { ascending: true });
+        if (error) { console.error("Error tareas:", error); return; }
+        const monthTasks = tareas.filter(t => { if(!t.fecha) return false; const [ty, tm, td] = t.fecha.split('-'); return parseInt(ty) === year && parseInt(tm) === (month + 1); });
+        taskListEl.innerHTML = "";
+        if (monthTasks.length === 0) { taskListEl.innerHTML = '<p style="font-size:12px; color:#999; font-style:italic;">No hay tareas para este mes.</p>'; progBar.style.width = "0%"; progText.innerText = "0% COMPLETADO"; return; }
+        let completedCount = 0;
+        monthTasks.forEach(t => {
+            if (t.completada) completedCount++;
+            const item = document.createElement("div"); item.className = `checklist-item ${t.completada ? 'is-completed' : ''}`;
+            item.innerHTML = `<div class="check-circle"></div><span>${t.texto}</span>`;
+            item.onclick = () => toggleTask(t.id, !t.completada, month, year); taskListEl.appendChild(item);
+        });
+        const percent = Math.round((completedCount / monthTasks.length) * 100);
+        progBar.style.width = `${percent}%`; progText.innerText = `${percent}% COMPLETADO`;
+    }
+    window.toggleTask = async (taskId, newStatus, month, year) => { const { error } = await supabase.from("tareas").update({ completada: newStatus }).eq("id", taskId); if (!error) loadTasks(month, year); };
+    
+    function getEmbedCode(url) {
+      if (!url) return null; const mediaUrls = url.split(',').map(u => u.trim()).filter(u => u.length > 0);
+      
+      // 1. CARRUSEL (Más de 1 link o link con comas)
+      if (mediaUrls.length > 1) { 
+          window.currentCarouselImages = mediaUrls.map(u => convertLinkToImgSrc(u)); 
+          window.currentCarouselIndex = 0; 
+          return `<div class="carousel-wrapper"><button class="carousel-button left" onclick="navigateCarousel(-1)">&#9664;</button><img src="${window.currentCarouselImages[0]}" class="carousel-image" id="carouselImage"><button class="carousel-button right" onclick="navigateCarousel(1)">&#9654;</button></div>`; 
+      }
+      
+      const singleUrl = mediaUrls[0]; 
+      // 2. VIDEO (Drive)
+      if (singleUrl.includes('drive.google.com') && singleUrl.includes('file')) { 
+          let id = singleUrl.split('/d/')[1].split('/')[0]; 
+          return `<iframe src="https://drive.google.com/file/d/${id}/preview" class="media-iframe" allow="autoplay" allowfullscreen></iframe>`; 
+      }
+      // 3. IMAGEN ÚNICA
+      const imgSrc = convertLinkToImgSrc(singleUrl); 
+      return `<img src="${imgSrc}" class="carousel-image" style="object-fit:contain;">`;
+    }
+
+    function convertLinkToImgSrc(url) { 
+        if (url.includes('drive.google.com') && url.includes('file')) { 
+            let id = url.split('/d/')[1].split('/')[0]; 
+            // Usamos lh3 con s1000 para alta calidad
+            return `https://lh3.googleusercontent.com/d/${id}=s1000`; 
+        } 
+        return url; 
+    }
+    
+    window.navigateCarousel = (direction) => { if (!window.currentCarouselImages || window.currentCarouselImages.length === 0) return; window.currentCarouselIndex = (window.currentCarouselIndex + direction + window.currentCarouselImages.length) % window.currentCarouselImages.length; document.getElementById('carouselImage').src = window.currentCarouselImages[window.currentCarouselIndex]; };
+    
+    window.openDrawer = (item) => {
+      currentContentId = item.id; const mediaContainer = document.getElementById("mediaContainer");
+      document.getElementById("d-title").innerText = item.titulo; document.getElementById("d-copy").innerText = item.copy || "Sin copy definido."; document.getElementById("d-date").innerText = item.fecha;
+      const statusEl = document.getElementById("d-status"); statusEl.className = "tag"; 
+      const st = item.estado ? item.estado.toUpperCase().trim() : 'PENDIENTE';
+      if (['PUBLISHED', 'PUBLICADO', 'APROBADO', 'APPROVED'].includes(st)) { statusEl.innerText = "APROBADO"; statusEl.classList.add("tag-green"); } else if (['REVIEW', 'REVISION', 'EN REVISION', 'EN REVISIÓN'].includes(st)) { statusEl.innerText = "EN REVISIÓN"; statusEl.classList.add("tag-gold"); } else { statusEl.innerText = "PENDIENTE"; statusEl.classList.add("tag-gray"); }
+      const embedHtml = getEmbedCode(item.media_url); mediaContainer.innerHTML = embedHtml || `<div class="no-media-placeholder">Sin Contenido</div>`;
+      document.getElementById("commentInput").value = item.feedback || ""; document.getElementById("drawer").classList.add("active"); document.getElementById("overlay").classList.add("active");
+    }
+    window.closeDrawer = () => { document.getElementById("mediaContainer").innerHTML = `<div class="no-media-placeholder">Cargando...</div>`; window.currentCarouselImages = []; document.getElementById("drawer").classList.remove("active"); document.getElementById("overlay").classList.remove("active"); }
+    window.sendComment = async () => {
+      const comment = document.getElementById("commentInput").value; const btn = document.querySelector(".btn-submit"); if (!currentContentId) return; btn.innerText = "Enviando..."; btn.disabled = true;
+      const { error } = await supabase.from('contenidos').update({ feedback: comment }).eq('id', currentContentId);
+      if (error) { console.error("Error", error); alert("Error al guardar."); btn.innerText = "Reintentar"; btn.disabled = false; } else { btn.innerText = "¡Enviado!"; btn.style.backgroundColor = '#8DA399'; setTimeout(() => { btn.innerText = "Enviar Comentario"; btn.style.backgroundColor = '#1A1A1A'; btn.disabled = false; closeDrawer(); }, 1500); }
+    }
+    document.getElementById("logoutBtn").addEventListener("click", async () => { await supabase.auth.signOut(); window.location.href = "index.html"; });
+    init();
+  </script>
+</body>
+</html>
