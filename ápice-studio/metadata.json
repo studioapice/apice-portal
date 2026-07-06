@@ -1,0 +1,6 @@
+{
+  "name": "Ápice Studio",
+  "description": "Estudio de Identidad de Marca, Comunicación y Expansión Estratégica. Transformamos ideas dispersas en sistemas estructurados de comunicación.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
